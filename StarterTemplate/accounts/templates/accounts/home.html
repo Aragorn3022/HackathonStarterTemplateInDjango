@@ -1,0 +1,40 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Home - StarterTemplate{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px;">
+    <h1 class="text-center">Welcome to StarterTemplate</h1>
+    
+    {% if user.is_authenticated %}
+        <div style="text-align: center; margin-top: 2rem;">
+            <p style="font-size: 1.2rem; color: #555; margin-bottom: 2rem;">
+                Hello, <strong>{{ user.username }}</strong>! You are logged in.
+            </p>
+            <a href="{% url 'profile' %}" class="btn">View Profile</a>
+        </div>
+    {% else %}
+        <div style="text-align: center; margin-top: 2rem;">
+            <p style="font-size: 1.2rem; color: #555; margin-bottom: 2rem;">
+                Get started by creating an account or logging in.
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="{% url 'register' %}" class="btn">Register</a>
+                <a href="{% url 'login' %}" class="btn" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);">Login</a>
+            </div>
+        </div>
+    {% endif %}
+    
+    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #f0f0f0;">
+        <h2 style="font-size: 1.3rem; margin-bottom: 1rem;">Features</h2>
+        <ul style="color: #555; line-height: 2;">
+            <li>✅ User Registration and Authentication</li>
+            <li>✅ Secure Login System</li>
+            <li>✅ User Profile Page</li>
+            <li>✅ Beautiful Modern UI</li>
+            <li>✅ Responsive Design</li>
+            <li>✅ Django Admin Integration</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

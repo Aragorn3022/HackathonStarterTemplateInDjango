@@ -1,0 +1,337 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Chat with {{ other_user.username }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; height: 80vh; display: flex; flex-direction: column;">
+    <!-- Chat Header -->
+    <div class="chat-header" style="border-bottom: 1px solid #e0e0e0; padding-bottom: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <a href="{% url 'chat_home' %}" style="text-decoration: none; font-size: 1.5rem;">←</a>
+                <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    {{ other_user.username.0|upper }}
+                </div>
+                <div>
+                    <h3 style="margin: 0; color: #333;">{{ other_user.username }}</h3>
+                    <small style="color: #999;">{{ other_user.email }}</small>
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'delete_chat' room.id %}" class="btn-danger-small" onclick="return confirm('Delete this entire conversation?')">
+                    Delete Chat
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Messages Container -->
+    <div class="messages-container" id="messages-container" style="flex: 1; overflow-y: auto; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="message {% if msg.sender.id == current_user.id %}message-sent{% else %}message-received{% endif %}" 
+                     style="margin-bottom: 1rem; display: flex; {% if msg.sender.id == current_user.id %}justify-content: flex-end;{% endif %}">
+                    <div class="message-bubble" style="max-width: 70%; padding: 0.75rem 1rem; border-radius: 12px; 
+     {% if msg.sender.id == current_user.id %}
+     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px;
+     {% else %}
+     background: white; color: #333; border: 1px solid #e0e0e0; border-bottom-left-radius: 4px;
+     {% endif %}">                       <div class="message-content" style="word-wrap: break-word; white-space: pre-wrap;">
+                            <!-- {% if msg.decrypted_content %}
+                                {{ msg.decrypted_content }}
+                            {% else %} -->
+                                {{ msg.get_decrypted_content }}
+                            <!-- {% endif %} -->
+                        </div>
+                        <div class="message-time" style="font-size: 0.7rem; margin-top: 0.25rem; opacity: 0.8; text-align: right;">
+                            {{ msg.timestamp|date:"H:i" }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-chat" style="text-align: center; padding: 3rem; color: #999;">
+                <p style="font-size: 3rem; margin: 0;">💬</p>
+                <p style="margin: 1rem 0 0 0;">No messages yet. Start the conversation!</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Message Input Form -->
+    <div class="message-form-container">
+        
+        <form method="post" style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            {% csrf_token %}
+            <div style="flex: 1;">
+                {{ form.message }}
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; height: fit-content;">
+                Send 📤
+            </button>
+        </form>
+          <div style="margin-top: 0.5rem; text-align: center;">
+            <small style="color: #999;">🔒 Messages are encrypted with AES256 | ⚡ Real-time WebSocket connection</small>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+        resize: vertical;
+    }
+    
+    .message-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .messages-container {
+        scrollbar-width: thin;
+        scrollbar-color: #667eea #f1f1f1;
+    }
+    
+    .messages-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 4px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb:hover {
+        background: #764ba2;
+    }
+    
+    .btn-danger-small {
+        background: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .btn-danger-small:hover {
+        background: #c82333;
+    }
+    
+    .alert {
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+
+<script>
+    // ===================================
+    // WebSocket Real-Time Chat
+    // ===================================
+    
+    const roomId = '{{ room.id }}';
+    const currentUserId = '{{ current_user.id }}';
+    const currentUsername = '{{ current_user.username }}';
+    
+    // Determine WebSocket protocol (ws or wss)
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws/chat/${roomId}/`;
+    
+    // Create WebSocket connection
+    let chatSocket = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    
+    function connectWebSocket() {
+        chatSocket = new WebSocket(wsUrl);
+        
+        chatSocket.onopen = function(e) {
+            console.log('WebSocket connected');
+            reconnectAttempts = 0;
+            
+            // Show connection status
+            showNotification('Connected to chat', 'success');
+        };
+        
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            
+            if (data.type === 'connection_established') {
+                console.log('Connection established:', data.message);
+            } else if (data.type === 'message') {
+                // Add new message to chat
+                appendMessage(data);
+                
+                // Scroll to bottom
+                scrollToBottom();
+            } else if (data.type === 'error') {
+                console.error('WebSocket error:', data.message);
+                showNotification(data.message, 'error');
+            }
+        };
+        
+        chatSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+            showNotification('Connection error', 'error');
+        };
+        
+        chatSocket.onclose = function(e) {
+            console.log('WebSocket disconnected');
+            
+            // Try to reconnect
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Reconnecting... Attempt ${reconnectAttempts}`);
+                setTimeout(connectWebSocket, 2000);
+            } else {
+                showNotification('Disconnected. Please refresh the page.', 'error');
+            }
+        };
+    }
+    
+    // Connect on page load
+    connectWebSocket();
+    
+    // ===================================
+    // Message Handling
+    // ===================================
+    
+    function appendMessage(data) {
+        const messagesContainer = document.getElementById('messages-container');
+        
+        // Check if this is our message or theirs
+        const isSent = data.sender_id === currentUserId;
+        
+        // Create message element
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+        messageDiv.style.marginBottom = '1rem';
+        messageDiv.style.display = 'flex';
+        if (isSent) {
+            messageDiv.style.justifyContent = 'flex-end';
+        }
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+        bubbleDiv.style.maxWidth = '70%';
+        bubbleDiv.style.padding = '0.75rem 1rem';
+        bubbleDiv.style.borderRadius = '12px';
+        bubbleDiv.style.wordWrap = 'break-word';
+        bubbleDiv.style.whiteSpace = 'pre-wrap';
+        
+        if (isSent) {
+            bubbleDiv.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            bubbleDiv.style.color = 'white';
+            bubbleDiv.style.borderBottomRightRadius = '4px';
+        } else {
+            bubbleDiv.style.background = 'white';
+            bubbleDiv.style.color = '#333';
+            bubbleDiv.style.border = '1px solid #e0e0e0';
+            bubbleDiv.style.borderBottomLeftRadius = '4px';
+        }
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = data.message;
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.style.fontSize = '0.7rem';
+        timeDiv.style.marginTop = '0.25rem';
+        timeDiv.style.opacity = '0.8';
+        timeDiv.style.textAlign = 'right';
+        timeDiv.textContent = data.timestamp;
+        
+        bubbleDiv.appendChild(contentDiv);
+        bubbleDiv.appendChild(timeDiv);
+        messageDiv.appendChild(bubbleDiv);
+        
+        messagesContainer.appendChild(messageDiv);
+    }
+    
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function showNotification(message, type) {
+        // Simple notification (you can enhance this)
+        console.log(`[${type}] ${message}`);
+    }
+    
+    // ===================================
+    // Form Handling
+    // ===================================
+    
+    const messageForm = document.querySelector('form');
+    const messageInput = document.querySelector('textarea[name="message"]');
+    
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        
+        if (message && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            // Send message via WebSocket
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            
+            // Clear input
+            messageInput.value = '';
+            messageInput.focus();
+        } else if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+            showNotification('Not connected. Please wait...', 'error');
+        }
+    });
+    
+    // Send with Enter key (Shift+Enter for new line)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            messageForm.dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    // ===================================
+    // Page Load Actions
+    // ===================================
+    
+    window.onload = function() {
+        scrollToBottom();
+        messageInput.focus();
+    };
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+        if (chatSocket) {
+            chatSocket.close();
+        }
+    });
+</script>
+{% endblock %}
