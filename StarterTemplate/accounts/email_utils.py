@@ -102,7 +102,7 @@ def send_otp_email(user, otp_code):
         return False
 
 
-def send_welcome_email(user):
+def send_welcome_email(user, request=None):
     """
     Send welcome email after successful verification
     """
@@ -112,6 +112,15 @@ def send_welcome_email(user):
     from_email = settings.DEFAULT_FROM_EMAIL
     if not from_email:
         from_email = 'noreply@example.com'
+    
+    # Generate profile URL (use HTTPS if available)
+    if request:
+        profile_url = request.build_absolute_uri('/profile/')
+    else:
+        # Fallback to settings or default
+        protocol = 'https' if getattr(settings, 'SECURE_SSL_REDIRECT', False) else 'http'
+        host = getattr(settings, 'ALLOWED_HOSTS', ['localhost'])[0]
+        profile_url = f"{protocol}://{host}/profile/"
     
     html_message = f"""
     <!DOCTYPE html>
@@ -143,7 +152,7 @@ def send_welcome_email(user):
                     <li>And much more!</li>
                 </ul>
                 <p style="text-align: center;">
-                    <a href="http://127.0.0.1:8000/profile/" class="button">Go to Your Profile</a>
+                    <a href="{profile_url}" class="button">Go to Your Profile</a>
                 </p>
             </div>
             <div class="footer">
@@ -160,7 +169,8 @@ def send_welcome_email(user):
     Your email has been successfully verified! Welcome to our community.
     
     You can now enjoy all the features of your account.
-      Visit your profile at: http://127.0.0.1:8000/profile/
+    
+    Visit your profile at: {profile_url}
     """
     
     try:

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, oauth_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -10,4 +10,8 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('resend-otp/', views.resend_otp, name='resend_otp'),
+    
+    # OAuth routes
+    path('auth/google/', oauth_views.google_login, name='google_login'),
+    path('auth/google/callback/', oauth_views.google_callback, name='google_callback'),
 ]

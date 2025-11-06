@@ -13,7 +13,7 @@ class User(Document):
     """
     username = StringField(required=True, max_length=50, unique=True)
     email = EmailField(required=True, unique=True)
-    password = StringField(required=True)
+    password = StringField(required=False)  # Optional for OAuth users
     first_name = StringField(max_length=30, default='')
     last_name = StringField(max_length=30, default='')
     is_active = BooleanField(default=False)  # Changed to False until OTP verification
@@ -22,6 +22,11 @@ class User(Document):
     is_verified = BooleanField(default=False)  # Email verification status
     date_joined = DateTimeField(default=datetime.now)
     last_login = DateTimeField(default=None)
+    
+    # OAuth fields
+    oauth_provider = StringField(max_length=20, default=None)  # 'google', 'facebook', etc.
+    oauth_id = StringField(max_length=255, default=None, unique=True, sparse=True)  # Provider's user ID
+    profile_picture = StringField(default=None)  # OAuth profile picture URL
     
     # OTP fields
     otp_code = StringField(max_length=6, default=None)
@@ -184,3 +189,66 @@ class User(Document):
                 return None, f"Please wait {remaining} seconds before requesting a new OTP."
         
         return self.generate_otp(), "OTP sent successfully!"
+    
+    @staticmethod
+    def get_or_create_oauth_user(provider, oauth_id, email, first_name='', last_name='', profile_picture=None):
+        """
+        Get or create a user from OAuth provider.
+        If user exists with this email but no OAuth, link the account.
+        OAuth users are automatically verified.
+        """
+        # Try to find user by OAuth ID first
+        user = User.objects(oauth_provider=provider, oauth_id=oauth_id).first()
+        
+        if user:
+            # Update last login
+            user.last_login = datetime.now()
+            # Update profile picture if provided
+            if profile_picture:
+                user.profile_picture = profile_picture
+            user.save()
+            return user, False  # Existing user
+        
+        # Try to find by email
+        user = User.objects(email=email).first()
+        
+        if user:
+            # Link OAuth to existing account
+            user.oauth_provider = provider
+            user.oauth_id = oauth_id
+            user.is_verified = True  # OAuth users are verified
+            user.is_active = True
+            user.last_login = datetime.now()
+            if profile_picture:
+                user.profile_picture = profile_picture
+            # Update name if not set
+            if not user.first_name and first_name:
+                user.first_name = first_name
+            if not user.last_name and last_name:
+                user.last_name = last_name
+            user.save()
+            return user, False  # Linked to existing account
+        
+        # Create new user
+        # Generate unique username from email
+        base_username = email.split('@')[0]
+        username = base_username
+        counter = 1
+        while User.objects(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+        
+        user = User(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            oauth_provider=provider,
+            oauth_id=oauth_id,
+            profile_picture=profile_picture,
+            is_verified=True,  # OAuth users are pre-verified
+            is_active=True,    # OAuth users are active immediately
+            password=None      # No password for OAuth users
+        )
+        user.save()
+        return user, True  # New user created

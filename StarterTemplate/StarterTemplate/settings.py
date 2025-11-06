@@ -77,20 +77,26 @@ ASGI_APPLICATION = "StarterTemplate.asgi.application"
 # -------------------------------------------------------------------
 # CHANNELS CONFIGURATION (WebSocket support)
 # -------------------------------------------------------------------
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+# Use Redis if REDIS_URL is set (Docker/Production), otherwise use InMemory (Development)
+REDIS_URL = os.getenv("REDIS_URL", None)
+
+if REDIS_URL:
+    # Production/Docker: Use Redis for channel layers
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
     }
-}
-# For production, use Redis:
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379")],
-#         },
-#     },
-# }
+else:
+    # Development: Use in-memory channel layer
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
 
 # -------------------------------------------------------------------
 # DATABASES — Used only for Django sessions (MongoEngine handles User data)
@@ -172,3 +178,42 @@ EMAIL_TIMEOUT = 30
 # ENCRYPTION CONFIGURATION (for chat messages)
 # -------------------------------------------------------------------
 ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'your_default_encryption_key_change_this_in_production')
+
+# -------------------------------------------------------------------
+# GOOGLE OAUTH CONFIGURATION
+# -------------------------------------------------------------------
+# Get credentials from Google Cloud Console: https://console.cloud.google.com/
+# Create OAuth 2.0 Client ID and set authorized redirect URIs:
+#   Development: http://127.0.0.1:8000/auth/google/callback/
+#   Docker/HTTPS: https://localhost/auth/google/callback/
+#   Production:   https://yourdomain.com/auth/google/callback/
+GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET', '')
+
+# -------------------------------------------------------------------
+# SECURITY SETTINGS (HTTPS/Docker)
+# -------------------------------------------------------------------
+# Enable these in production with HTTPS
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# HTTPS/SSL Settings (for production)
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = False  # Nginx handles redirect
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# CSRF Trusted Origins (for Docker/Nginx)
+CSRF_TRUSTED_ORIGINS = [
+    'https://localhost',
+    'https://127.0.0.1',
+]
+# Add your production domain to CSRF_TRUSTED_ORIGINS
+if os.getenv('PRODUCTION_DOMAIN'):
+    CSRF_TRUSTED_ORIGINS.append(f"https://{os.getenv('PRODUCTION_DOMAIN')}")

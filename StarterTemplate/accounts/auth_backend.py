@@ -8,11 +8,13 @@ class MongoEngineBackend:
     
     def authenticate(self, request, username=None, password=None):
         """
-        Authenticate a user with username and password
+        Authenticate a user with username and password.
+        OAuth users (without password) cannot authenticate this way.
         """
         try:
             user = User.objects.get(username=username)
-            if user.check_password(password):
+            # Check if user has a password (not OAuth user)
+            if user.password and user.check_password(password):
                 return user
         except User.DoesNotExist:
             return None

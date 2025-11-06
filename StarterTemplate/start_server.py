@@ -45,10 +45,12 @@ def main():
     except Exception as e:
         print(f"⚠️  Warning: MongoDB connection issue: {e}")
         print("Make sure MongoDB is running: mongod")
-    
-    print("\n" + "=" * 70)
-    print("🌐 Server will start at: http://127.0.0.1:8000")
+      print("\n" + "=" * 70)
+    print("🌐 Development Server: http://127.0.0.1:8000")
     print("📡 WebSocket endpoint: ws://127.0.0.1:8000/ws/chat/<room_id>/")
+    print("")
+    print("🐳 Docker (HTTPS):     https://localhost")
+    print("📡 WebSocket (Secure): wss://localhost/ws/chat/<room_id>/")
     print("=" * 70)
     print("\n💡 Press Ctrl+C to stop the server\n")
     

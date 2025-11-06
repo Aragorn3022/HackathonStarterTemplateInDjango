@@ -141,10 +141,9 @@ def verify_otp(request):
         
         # Verify OTP
         success, message = user.verify_otp(otp_code)
-        
         if success:
             # Send welcome email
-            send_welcome_email(user)
+            send_welcome_email(user, request)
             
             # Clear session
             del request.session['otp_user_id']

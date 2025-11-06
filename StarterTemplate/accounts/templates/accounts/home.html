@@ -24,17 +24,55 @@
             </div>
         </div>
     {% endif %}
-    
-    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #f0f0f0;">
-        <h2 style="font-size: 1.3rem; margin-bottom: 1rem;">Features</h2>
-        <ul style="color: #555; line-height: 2;">
-            <li>✅ User Registration and Authentication</li>
-            <li>✅ Secure Login System</li>
-            <li>✅ User Profile Page</li>
-            <li>✅ Beautiful Modern UI</li>
-            <li>✅ Responsive Design</li>
-            <li>✅ Django Admin Integration</li>
-        </ul>
+      <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #f0f0f0;">
+        <h2 style="font-size: 1.3rem; margin-bottom: 1rem;">✨ Features</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+            <!-- Authentication -->
+            <div style="padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem;">🔐 Authentication</h3>
+                <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.8;">
+                    <li>Email + OTP Verification</li>
+                    <li>Google OAuth 2.0</li>
+                    <li>Profile Management</li>
+                    <li>Password Security</li>
+                </ul>
+            </div>
+            
+            <!-- Chat System -->
+            <div style="padding: 1.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; color: white;">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem;">💬 Real-Time Chat</h3>
+                <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.8;">
+                    <li>WebSocket Support</li>
+                    <li>AES-256 Encryption</li>
+                    <li>1-on-1 Messaging</li>
+                    <li>Unread Counts</li>
+                </ul>
+            </div>
+            
+            <!-- Modern UI -->
+            <div style="padding: 1.5rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 12px; color: white;">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem;">🎨 Modern UI</h3>
+                <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.8;">
+                    <li>Responsive Design</li>
+                    <li>Beautiful Gradients</li>
+                    <li>Smooth Animations</li>
+                    <li>Mobile-Friendly</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 12px; border-left: 4px solid #667eea;">
+            <h3 style="margin: 0 0 1rem 0; color: #667eea;">🚀 Tech Stack</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                <span style="padding: 0.4rem 0.8rem; background: white; border-radius: 20px; font-size: 0.9rem; border: 1px solid #e0e0e0;">Django 4.2</span>
+                <span style="padding: 0.4rem 0.8rem; background: white; border-radius: 20px; font-size: 0.9rem; border: 1px solid #e0e0e0;">MongoDB</span>
+                <span style="padding: 0.4rem 0.8rem; background: white; border-radius: 20px; font-size: 0.9rem; border: 1px solid #e0e0e0;">WebSockets</span>
+                <span style="padding: 0.4rem 0.8rem; background: white; border-radius: 20px; font-size: 0.9rem; border: 1px solid #e0e0e0;">Google OAuth</span>
+                <span style="padding: 0.4rem 0.8rem; background: white; border-radius: 20px; font-size: 0.9rem; border: 1px solid #e0e0e0;">AES-256</span>
+                <span style="padding: 0.4rem 0.8rem; background: white; border-radius: 20px; font-size: 0.9rem; border: 1px solid #e0e0e0;">REST API</span>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
